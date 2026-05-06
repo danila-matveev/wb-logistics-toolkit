@@ -1,0 +1,121 @@
+# Справочник складов WB.
+# available: false — склад исключается из рекомендаций по перестановкам.
+# redistribution_limit_per_day — из WB Partners → Тарифный конструктор.
+warehouses:
+  # Центральный ФО
+  - name: Коледино
+    fd: Центральный
+    available: true
+    redistribution_limit_per_day: 100000
+  - name: Электросталь
+    fd: Центральный
+    available: true
+    redistribution_limit_per_day: 98900
+  - name: Тула
+    fd: Центральный
+    available: true
+    redistribution_limit_per_day: 100000
+  - name: Котовск
+    fd: Центральный
+    available: true
+    redistribution_limit_per_day: 499300
+  - name: Рязань (Тюшевское)
+    fd: Центральный
+    available: true
+    redistribution_limit_per_day: 99600
+  - name: Белые Столбы
+    fd: Центральный
+    available: true
+    redistribution_limit_per_day: 5000
+  - name: Подольск
+    fd: Центральный
+    available: true
+    redistribution_limit_per_day: 5000
+
+  # Южный + Северо-Кавказский ФО
+  - name: Краснодар (Тихорецкая)
+    fd: Южный + Северо-Кавказский
+    available: true
+    redistribution_limit_per_day: 499000
+  - name: Краснодар
+    fd: Южный + Северо-Кавказский
+    available: true
+    redistribution_limit_per_day: 10000
+  - name: Невинномысск
+    fd: Южный + Северо-Кавказский
+    available: true
+    redistribution_limit_per_day: 100000
+  - name: Волгоград
+    fd: Южный + Северо-Кавказский
+    available: true
+    redistribution_limit_per_day: 49500
+
+  # Приволжский ФО
+  - name: Казань
+    fd: Приволжский
+    available: true
+    redistribution_limit_per_day: 10000
+    note: "Дорогой склад (~225%), но высокая локализация ПФО ~95%"
+  - name: Самара (Новосемейкино)
+    fd: Приволжский
+    available: true
+    redistribution_limit_per_day: 100000
+  - name: Сарапул
+    fd: Приволжский
+    available: true
+    redistribution_limit_per_day: 100000
+  - name: Пенза
+    fd: Приволжский
+    available: true
+    redistribution_limit_per_day: 20000
+
+  # Северо-Западный ФО
+  - name: Склад СПБ Шушары Московское
+    fd: Северо-Западный
+    available: true
+    redistribution_limit_per_day: 4800
+  - name: Санкт-Петербург (Шушары)
+    fd: Северо-Западный
+    available: true
+    redistribution_limit_per_day: 4800
+  - name: СПб Шушары
+    fd: Северо-Западный
+    available: true
+    redistribution_limit_per_day: 4800
+  - name: Калининград
+    fd: Северо-Западный
+    available: true
+    redistribution_limit_per_day: 5000
+
+  # Уральский ФО
+  - name: Екатеринбург - Перспективный 12
+    fd: Уральский
+    available: true
+    redistribution_limit_per_day: 100000
+  - name: Екатеринбург - Перспективная 14
+    fd: Уральский
+    available: true
+    redistribution_limit_per_day: 100000
+  - name: Екатеринбург
+    fd: Уральский
+    available: true
+    redistribution_limit_per_day: 5000
+
+  # Дальневосточный + Сибирский ФО
+  - name: Новосибирск
+    fd: Дальневосточный + Сибирский
+    available: false
+    reason: "Закрыт WB для поставок СФО (май 2026)"
+    redistribution_limit_per_day: 5000
+  - name: Хабаровск
+    fd: Дальневосточный + Сибирский
+    available: true
+    redistribution_limit_per_day: 5000
+  - name: Барнаул
+    fd: Дальневосточный + Сибирский
+    available: true
+    redistribution_limit_per_day: 5000
+  - name: Владивосток
+    fd: Дальневосточный + Сибирский
+    available: true
+    redistribution_limit_per_day: 5000
