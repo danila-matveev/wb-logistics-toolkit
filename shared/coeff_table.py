@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import warnings
 from datetime import date
 from typing import Any
 
@@ -52,6 +53,13 @@ def get_ktr_krp(localization_pct: float) -> tuple[float, float]:
     for row in _get_table():
         if row["min_loc"] <= loc <= row["max_loc"]:
             return float(row["ktr"]), float(row["krp_pct"])
+    warnings.warn(
+        f"No coefficient row found for localization_pct={localization_pct:.2f} "
+        f"(clamped={loc:.2f}). Using fallback (2.20, 2.50). "
+        "Check wb_coeff_table in Supabase for coverage gaps.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
     return 2.20, 2.50
 
 

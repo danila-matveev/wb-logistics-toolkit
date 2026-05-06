@@ -28,18 +28,20 @@ cp .env.example .env
 # 4. Проверить настройку
 python check_setup.py
 
-# 5. Запустить анализ
-python localization/run_analysis.py --cabinet ooo --days 90
+# 5. Запустить анализ (появится в рамках Plan 2)
+# python localization/run_analysis.py --cabinet ooo --days 90
 ```
 
 ## Документация
 
-- [Установка](docs/setup.md)
-- [Ключевые понятия](docs/concepts.md)
-- [Как работать с инструментом](docs/workflow-localization.md)
-- [Справочник складов](docs/warehouses.md)
-- [Аудит переплат](docs/tool-audit.md)
-- [Supabase и тарифы](docs/tariffs-db.md)
+> **Примечание:** Документация создаётся в рамках Plan 4. Файлы появятся в директории `docs/`.
+
+- [Установка](docs/setup.md) _(coming soon)_
+- [Ключевые понятия](docs/concepts.md) _(coming soon)_
+- [Как работать с инструментом](docs/workflow-localization.md) _(coming soon)_
+- [Справочник складов](docs/warehouses.md) _(coming soon)_
+- [Аудит переплат](docs/tool-audit.md) _(coming soon)_
+- [Supabase и тарифы](docs/tariffs-db.md) _(coming soon)_
 
 ## Требования
 
