@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import threading
 from datetime import date
 from typing import Any
 
 from .supabase import get_supabase_client
 
 _cache: list[dict[str, Any]] | None = None
+_cache_lock = threading.Lock()
 
 
 def _load_from_supabase() -> list[dict[str, Any]]:
@@ -24,13 +26,16 @@ def _get_table() -> list[dict[str, Any]]:
     global _cache
     if _cache is not None:
         return _cache
-    rows = _load_from_supabase()
-    if not rows:
-        raise RuntimeError(
-            "wb_coeff_table is empty in Supabase. "
-            "Run: python audit/etl/import_coeff_table.py"
-        )
-    _cache = rows
+    with _cache_lock:
+        if _cache is not None:
+            return _cache
+        rows = _load_from_supabase()
+        if not rows:
+            raise RuntimeError(
+                "wb_coeff_table is empty in Supabase. "
+                "Run: python audit/etl/import_coeff_table.py"
+            )
+        _cache = rows
     return _cache
 
 
@@ -53,4 +58,5 @@ def get_ktr_krp(localization_pct: float) -> tuple[float, float]:
 def clear_cache() -> None:
     """Clear the in-memory coefficient table cache (used in tests)."""
     global _cache
-    _cache = None
+    with _cache_lock:
+        _cache = None

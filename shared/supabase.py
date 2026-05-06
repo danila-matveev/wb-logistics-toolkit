@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import os
-from functools import lru_cache
 
 from supabase import create_client, Client
 
+_client: Client | None = None
+_client_env: tuple[str, str] | None = None
 
-@lru_cache(maxsize=1)
+
 def get_supabase_client() -> Client:
-    """Return a cached Supabase client. Reads SUPABASE_URL and SUPABASE_KEY from env."""
+    """Return a cached Supabase client.
+
+    Re-creates the client if SUPABASE_URL or SUPABASE_KEY have changed since
+    last call. Reads credentials from environment.
+    """
+    global _client, _client_env
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_KEY")
     if not url or not key:
@@ -16,4 +22,9 @@ def get_supabase_client() -> Client:
             "SUPABASE_URL and SUPABASE_KEY must be set in environment. "
             "Copy .env.example to .env and fill in your credentials."
         )
-    return create_client(url, key)
+    env_state = (url, key)
+    if _client is not None and _client_env == env_state:
+        return _client
+    _client = create_client(url, key)
+    _client_env = env_state
+    return _client
