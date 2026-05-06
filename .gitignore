@@ -1,0 +1,10 @@
+.env
+credentials.json
+*.db
+localization/data/cache/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+*.egg-info/
+.DS_Store

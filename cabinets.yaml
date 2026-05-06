@@ -1,0 +1,8 @@
+# Конфигурация кабинетов WB.
+# Токены хранятся в .env: WB_TOKEN_{NAME_UPPER}
+# Этот файл можно коммитить — секретов нет.
+cabinets:
+  - name: ooo
+    sheet_id: "1TMadxTXPYnuGTvnMZT9Ny7eL4KbvsjK2XsuRjpRmnM0"
+  - name: ip
+    sheet_id: "YOUR_SHEET_ID_HERE"
