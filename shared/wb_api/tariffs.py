@@ -1,0 +1,29 @@
+from __future__ import annotations
+
+from typing import Any
+
+from .client import WBClient
+
+
+def fetch_box_tariffs(
+    client: WBClient,
+    date: str | None = None,
+) -> list[dict[str, Any]]:
+    """Fetch current box delivery tariffs per warehouse.
+
+    Args:
+        client: WBClient instance.
+        date: ISO date (YYYY-MM-DD). Defaults to today if None.
+
+    Returns:
+        List of warehouse tariff dicts with warehouseName, boxDeliveryBase, etc.
+    """
+    from datetime import date as _date
+
+    params: dict[str, Any] = {"date": date or _date.today().isoformat()}
+    data = client.get(
+        base=WBClient.SUPPLY_URL,
+        path="/api/v1/tariffs/box",
+        params=params,
+    )
+    return data.get("response", {}).get("data", {}).get("warehouseList", [])
