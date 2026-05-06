@@ -29,6 +29,8 @@ def load_cabinets(cabinets_path: str | Path = "cabinets.yaml") -> list[Cabinet]:
     with open(path) as f:
         data = yaml.safe_load(f)
 
+    if not data or "cabinets" not in data:
+        raise ValueError(f"Invalid cabinets YAML in {path}: missing 'cabinets' key")
     result: list[Cabinet] = []
     for c in data["cabinets"]:
         name: str = c["name"]
@@ -59,6 +61,8 @@ def load_warehouse_statuses(
     with open(path) as f:
         data = yaml.safe_load(f)
 
+    if not data or "warehouses" not in data:
+        raise ValueError(f"Invalid warehouse YAML in {path}: missing 'warehouses' key")
     result: dict[str, WarehouseStatus] = {}
     for w in data["warehouses"]:
         status = WarehouseStatus(
