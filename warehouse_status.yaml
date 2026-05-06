@@ -70,6 +70,8 @@ warehouses:
     redistribution_limit_per_day: 20000
 
   # Северо-Западный ФО
+  # Примечание: WB API возвращает 3 разных строки для одного физического склада Шушары
+  # в зависимости от эндпоинта и периода. Все три нужны для корректного маппинга.
   - name: Склад СПБ Шушары Московское
     fd: Северо-Западный
     available: true
@@ -106,7 +108,7 @@ warehouses:
     fd: Дальневосточный + Сибирский
     available: false
     reason: "Закрыт WB для поставок СФО (май 2026)"
-    redistribution_limit_per_day: 5000
+    redistribution_limit_per_day: 0
   - name: Хабаровск
     fd: Дальневосточный + Сибирский
     available: true
