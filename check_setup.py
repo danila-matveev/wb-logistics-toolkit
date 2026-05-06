@@ -45,7 +45,7 @@ def check_credentials_not_staged() -> tuple[bool, str]:
         if creds_path in staged:
             return False, (
                 f"DANGER: '{creds_path}' is staged for commit! "
-                "Run: git reset HEAD credentials.json"
+                f"Run: git reset HEAD {creds_path}"
             )
     except Exception:
         pass
@@ -62,17 +62,24 @@ def check_wb_tokens() -> tuple[bool, str]:
     import yaml
     if not Path("cabinets.yaml").exists():
         return False, "cabinets.yaml missing, cannot check WB tokens"
-    with open("cabinets.yaml") as f:
-        data = yaml.safe_load(f)
-    missing = []
-    for cab in data.get("cabinets", []):
-        name = cab["name"]
-        key = f"WB_TOKEN_{name.upper()}"
-        if not os.environ.get(key):
-            missing.append(key)
-    if missing:
-        return False, f"Missing WB tokens in .env: {', '.join(missing)}"
-    return True, "All WB tokens found"
+    try:
+        with open("cabinets.yaml") as f:
+            data = yaml.safe_load(f)
+        if not data or "cabinets" not in data:
+            return False, "cabinets.yaml has invalid structure: missing 'cabinets' key"
+        missing = []
+        for cab in data["cabinets"]:
+            name = cab["name"]
+            key = f"WB_TOKEN_{name.upper()}"
+            if not os.environ.get(key):
+                missing.append(key)
+        if missing:
+            return False, f"Missing WB tokens in .env: {', '.join(missing)}"
+        return True, "All WB tokens found"
+    except (KeyError, TypeError) as e:
+        return False, f"cabinets.yaml has invalid structure: {e}"
+    except Exception as e:
+        return False, f"Error reading cabinets.yaml: {e}"
 
 
 def check_supabase() -> tuple[bool, str]:

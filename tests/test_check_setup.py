@@ -55,3 +55,63 @@ def test_check_credentials_not_in_git_staging(tmp_path, monkeypatch):
     # Should pass when git is not available or no staged file
     ok, msg = check_credentials_not_staged()
     assert isinstance(ok, bool)
+
+
+def test_check_warehouse_status_yaml_missing(tmp_path, monkeypatch):
+    from check_setup import check_warehouse_status_yaml
+    monkeypatch.chdir(tmp_path)
+    ok, msg = check_warehouse_status_yaml()
+    assert ok is False
+
+
+def test_check_warehouse_status_yaml_present(tmp_path, monkeypatch):
+    from check_setup import check_warehouse_status_yaml
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "warehouse_status.yaml").write_text("warehouses: []")
+    ok, msg = check_warehouse_status_yaml()
+    assert ok is True
+
+
+def test_check_wb_tokens_all_present(tmp_path, monkeypatch):
+    from check_setup import check_wb_tokens
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "cabinets.yaml").write_text("""
+cabinets:
+  - name: ooo
+    sheet_id: "1AbC"
+""")
+    monkeypatch.setenv("WB_TOKEN_OOO", "tok123")
+    ok, msg = check_wb_tokens()
+    assert ok is True
+    assert "found" in msg.lower()
+
+
+def test_check_wb_tokens_missing(tmp_path, monkeypatch):
+    from check_setup import check_wb_tokens
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "cabinets.yaml").write_text("""
+cabinets:
+  - name: ooo
+    sheet_id: "1AbC"
+""")
+    monkeypatch.delenv("WB_TOKEN_OOO", raising=False)
+    ok, msg = check_wb_tokens()
+    assert ok is False
+    assert "WB_TOKEN_OOO" in msg
+
+
+def test_check_wb_tokens_malformed_yaml(tmp_path, monkeypatch):
+    from check_setup import check_wb_tokens
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "cabinets.yaml").write_text("not: valid: yaml: structure: :")
+    ok, msg = check_wb_tokens()
+    assert ok is False
+
+
+def test_check_supabase_missing_credentials(monkeypatch):
+    from check_setup import check_supabase
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_KEY", raising=False)
+    ok, msg = check_supabase()
+    assert ok is False
+    assert "missing" in msg.lower()
