@@ -11,7 +11,7 @@ def test_client_sets_authorization_header():
     assert client._headers["Authorization"] == "test_token_abc"
 
 
-def test_client_get_calls_correct_url(respx_mock=None):
+def test_client_get_calls_correct_url():
     client = WBClient(token="tok")
     mock_response = {"data": [{"id": 1}]}
 
@@ -58,3 +58,25 @@ def test_client_default_timeout_is_30():
 def test_client_custom_timeout():
     client = WBClient(token="tok", timeout=60.0)
     assert client.timeout == 60.0
+
+
+def test_client_post_calls_correct_url():
+    client = WBClient(token="tok")
+    mock_response = {"result": "ok"}
+
+    with patch("httpx.Client") as mock_httpx:
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = mock_response
+        mock_resp.raise_for_status = MagicMock()
+        mock_httpx.return_value.__enter__.return_value.post.return_value = mock_resp
+
+        result = client.post(
+            base="https://content-api.wildberries.ru",
+            path="/content/v2/get/cards/list",
+            json={"settings": {"cursor": {"nmIDs": [123], "limit": 100}}},
+        )
+
+    assert result == mock_response
+    call_args = mock_httpx.return_value.__enter__.return_value.post.call_args
+    assert call_args[0][0] == "https://content-api.wildberries.ru/content/v2/get/cards/list"
+    assert call_args[1]["json"]["settings"]["cursor"]["nmIDs"] == [123]
