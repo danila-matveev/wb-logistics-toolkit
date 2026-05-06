@@ -74,3 +74,22 @@ def test_fetch_report_returns_list():
     with patch.object(client, "get", return_value=mock_data):
         result = fetch_report(client, date_from="2026-01-01", date_to="2026-03-31")
     assert result == mock_data
+
+
+def test_fetch_report_pagination_stops_on_short_page():
+    client = make_client()
+    page1 = [{"rrd_id": i, "quantity": 1} for i in range(100_000)]
+    page2 = [{"rrd_id": 100_000, "quantity": 1}]
+
+    call_count = 0
+
+    def mock_get(**kwargs):
+        nonlocal call_count
+        call_count += 1
+        return page1 if call_count == 1 else page2
+
+    with patch.object(client, "get", side_effect=mock_get):
+        result = fetch_report(client, date_from="2026-01-01", date_to="2026-03-31", limit=100_000)
+
+    assert len(result) == 100_001
+    assert call_count == 2

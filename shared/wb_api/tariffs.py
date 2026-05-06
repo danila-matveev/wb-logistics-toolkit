@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date as _date
 from typing import Any
 
 from .client import WBClient
@@ -18,8 +19,6 @@ def fetch_box_tariffs(
     Returns:
         List of warehouse tariff dicts with warehouseName, boxDeliveryBase, etc.
     """
-    from datetime import date as _date
-
     params: dict[str, Any] = {"date": date or _date.today().isoformat()}
     data = client.get(
         base=WBClient.SUPPLY_URL,

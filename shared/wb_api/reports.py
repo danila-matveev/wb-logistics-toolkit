@@ -44,8 +44,9 @@ def fetch_report(
         all_rows.extend(rows)
         if len(rows) < limit:
             break
-        cursor = rows[-1].get("rrd_id", cursor)
-        if cursor == rrdid:
+        next_cursor = rows[-1].get("rrd_id") if rows else None
+        if next_cursor is None or next_cursor == cursor:
             break
+        cursor = next_cursor
 
     return all_rows
