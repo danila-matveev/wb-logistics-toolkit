@@ -32,7 +32,15 @@ def fetch_pallet_tariffs(
     client: WBClient,
     date: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Fetch pallet delivery tariffs per warehouse."""
+    """Fetch pallet delivery tariffs per warehouse.
+
+    Args:
+        client: WBClient instance.
+        date: ISO date (YYYY-MM-DD). Defaults to today if None.
+
+    Returns:
+        List of warehouse tariff dicts with warehouseName and pallet pricing.
+    """
     params: dict[str, Any] = {"date": date or _date.today().isoformat()}
     data = client.get(
         base=WBClient.SUPPLY_URL,
