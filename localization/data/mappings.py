@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from __future__ import annotations
-
 """
 Маппинги складов WB и субъектов РФ → федеральные округа.
 
@@ -11,6 +9,7 @@ from __future__ import annotations
 Заказ считается ЛОКАЛЬНЫМ если склад отгрузки и адрес доставки
 находятся в одном федеральном округе.
 """
+from __future__ import annotations
 
 import logging
 
@@ -86,12 +85,12 @@ WAREHOUSE_TO_FD: dict[str, str] = {
 }
 
 # Специальные склады, которые надо пропускать (транзит, агрегация)
-SKIP_WAREHOUSES = {
+SKIP_WAREHOUSES: frozenset[str] = frozenset({
     'В пути до получателей',
     'В пути возвраты на склад WB',
     'Всего находится на складах',
     'Маркетплейс',
-}
+})
 
 
 # ============================================
@@ -373,13 +372,11 @@ def log_unknown_mappings(orders: list[dict]) -> tuple[set[str], set[str]]:
             "Неизвестные склады WB (%d): %s",
             len(unknown_wh), sorted(unknown_wh)
         )
-        print(f"   WARNING: Неизвестные склады ({len(unknown_wh)}): {sorted(unknown_wh)}")
 
     if unknown_obl:
         logger.warning(
             "Неизвестные области доставки (%d): %s",
             len(unknown_obl), sorted(unknown_obl)
         )
-        print(f"   WARNING: Неизвестные области ({len(unknown_obl)}): {sorted(unknown_obl)}")
 
     return unknown_wh, unknown_obl
