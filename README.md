@@ -28,8 +28,8 @@ cp .env.example .env
 # 4. Проверить настройку
 python check_setup.py
 
-# 5. Запустить анализ (появится в рамках Plan 2)
-# python localization/run_analysis.py --cabinet ooo --days 90
+# 5. Запустить анализ
+# python localization/run_analysis.py ooo --days 90
 ```
 
 ## Документация

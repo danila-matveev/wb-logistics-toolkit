@@ -231,7 +231,7 @@ WB_TOKEN_NEW_CAB=eyJ...
 3. Запустить:
 ```bash
 python check_setup.py
-python localization/run_analysis.py --cabinet new_cab
+python localization/run_analysis.py new_cab --days 90
 ```
 
 ---

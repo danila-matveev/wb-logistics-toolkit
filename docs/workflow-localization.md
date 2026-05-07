@@ -28,13 +28,13 @@
 ### Команда
 
 ```bash
-python localization/run_analysis.py --cabinet ooo --days 90
+python localization/run_analysis.py ooo --days 90
 ```
 
 | Параметр | Описание | По умолчанию |
 |----------|----------|--------------|
-| `--cabinet` | Имя кабинета из `cabinets.yaml` | обязательный |
-| `--days` | Глубина истории заказов | 90 |
+| `cabinet` | Имя кабинета из `cabinets.yaml` (позиционный) | обязательный |
+| `--days` | Глубина истории заказов | 30 |
 
 ### Google Sheets — что появится
 
@@ -77,12 +77,12 @@ localization/data/cache/{cabinet}_latest.json
 ### Команда
 
 ```bash
-python localization/run_roadmap.py --cabinet ooo
+python localization/run_roadmap.py ooo
 ```
 
 | Параметр | Описание | По умолчанию |
 |----------|----------|--------------|
-| `--cabinet` | Имя кабинета | обязательный |
+| `cabinet` | Имя кабинета (позиционный) | обязательный |
 | `--target` | Целевой ДЛ % | 85 |
 | `--limit` | Макс. доля остатков для перемещения | 0.3 |
 
@@ -117,12 +117,12 @@ Roadmap показывает **план**, не **операцию**. Он от�
 ### Команда
 
 ```bash
-python localization/run_permutations.py --cabinet ooo
+python localization/run_permutations.py ooo
 ```
 
 | Параметр | Описание | По умолчанию |
 |----------|----------|--------------|
-| `--cabinet` | Имя кабинета | обязательный |
+| `cabinet` | Имя кабинета (позиционный) | обязательный |
 | `--safety-days` | Мин. запас дней продаж на доноре после отгрузки | 14 |
 
 ### Google Sheets — что появится

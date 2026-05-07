@@ -100,10 +100,7 @@ SUPABASE_KEY=eyJ...anon key...
 
 1. Создайте проект на [supabase.com](https://supabase.com) (Free tier)
 2. Скопируйте **Project URL** и **anon public key** из Settings → API
-3. Примените миграцию для создания таблиц:
-   - Откройте Supabase → SQL Editor
-   - Выполните SQL из `database/migrations/001_create_tariffs.sql` (если файл есть)
-   - Или создайте таблицы вручную по схеме из [tariffs-db.md](tariffs-db.md)
+3. Создайте таблицы — откройте Supabase → SQL Editor и выполните SQL из [tariffs-db.md](tariffs-db.md#1-создать-таблицы-в-supabase)
 4. Загрузите начальную таблицу КТР/КРП:
 
 ```bash
@@ -117,18 +114,18 @@ python check_setup.py
 ```
 
 Скрипт проверит:
-- наличие `.env` и всех нужных переменных
-- доступность WB API (тестовый запрос к каждому кабинету)
-- наличие `credentials.json` (и что он не в git staging)
-- подключение к Supabase и наличие таблиц
+- наличие `.env`, `cabinets.yaml`, `warehouse_status.yaml`
+- наличие `credentials.json` (и что он не попал в git staging)
+- наличие переменных `WB_TOKEN_*` для каждого кабинета из `cabinets.yaml`
+- подключение к Supabase и доступность таблицы `wb_coeff_table`
 
 Если всё зелёное — можно запускать.
 
 ## Первый запуск
 
 ```bash
-# Оптимизатор локализации — полный анализ за 90 дней
-python localization/run_analysis.py --cabinet ooo --days 90
+# Оптимизатор локализации — анализ за 90 дней
+python localization/run_analysis.py ooo --days 90
 
 # Аудит переплат за квартал
 python audit/run_audit.py ooo 2026-01-01 2026-03-31
