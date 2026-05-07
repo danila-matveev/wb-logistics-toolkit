@@ -49,12 +49,36 @@ def test_fetch_box_tariffs_returns_list():
     assert result[0]["warehouseName"] == "Коледино"
 
 
-def test_fetch_warehouse_remains_returns_list():
+def test_fetch_warehouse_remains_async_flow_returns_flat_list():
     client = make_client()
-    mock_resp = [{"warehouseName": "Коледино", "nmId": 123, "quantity": 50}]
-    with patch.object(client, "get", return_value=mock_resp):
-        result = fetch_warehouse_remains(client)
-    assert result == mock_resp
+    create_resp = {"data": {"taskId": "task-xyz"}}
+    status_resp = {"data": {"status": "done"}}
+    download_resp = [
+        {
+            "vendorCode": "art1",
+            "nmId": 123,
+            "barcode": "bc1",
+            "techSize": "M",
+            "volume": 1.5,
+            "brand": "B",
+            "subjectName": "S",
+            "warehouses": [
+                {"warehouseName": "Коледино", "quantity": 50},
+                {"warehouseName": "Электросталь", "quantity": 30},
+            ],
+        }
+    ]
+    with patch.object(
+        client,
+        "get",
+        side_effect=[create_resp, status_resp, download_resp],
+    ):
+        result = fetch_warehouse_remains(client, poll_interval=0)
+    assert len(result) == 2
+    assert {row["warehouseName"] for row in result} == {"Коледино", "Электросталь"}
+    assert all(row["nmId"] == 123 for row in result)
+    assert all(row["volume"] == 1.5 for row in result)
+    assert sum(row["quantity"] for row in result) == 80
 
 
 def test_fetch_nm_volumes_returns_dict():
