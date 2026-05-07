@@ -21,7 +21,7 @@ def fetch_box_tariffs(
     """
     params: dict[str, Any] = {"date": date or _date.today().isoformat()}
     data = client.get(
-        base=WBClient.SUPPLY_URL,
+        base=WBClient.COMMON_URL,
         path="/api/v1/tariffs/box",
         params=params,
     )
@@ -43,7 +43,7 @@ def fetch_pallet_tariffs(
     """
     params: dict[str, Any] = {"date": date or _date.today().isoformat()}
     data = client.get(
-        base=WBClient.SUPPLY_URL,
+        base=WBClient.COMMON_URL,
         path="/api/v1/tariffs/pallet",
         params=params,
     )

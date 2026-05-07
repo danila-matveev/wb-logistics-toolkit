@@ -8,8 +8,11 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from datetime import date, timedelta
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.config import get_cabinet
 from shared.wb_api.client import WBClient
