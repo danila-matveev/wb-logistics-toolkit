@@ -81,15 +81,41 @@ def test_fetch_warehouse_remains_async_flow_returns_flat_list():
     assert sum(row["quantity"] for row in result) == 80
 
 
-def test_fetch_nm_volumes_returns_dict():
+def test_fetch_nm_volumes_filters_to_requested_nm_ids():
     client = make_client()
-    mock_resp = {"data": {"cards": [
-        {"nmID": 123, "dimensions": {"length": 10, "width": 10, "height": 10}}
-    ]}}
-    with patch.object(client, "post", return_value=mock_resp):
+    page1 = {
+        "cards": [
+            {"nmID": 123, "dimensions": {"length": 10, "width": 10, "height": 10}},
+            {"nmID": 999, "dimensions": {"length": 5, "width": 5, "height": 5}},
+        ],
+        "cursor": {"updatedAt": "2026-04-01T00:00:00Z", "nmID": 999, "total": 2},
+    }
+    with patch.object(client, "post", return_value=page1):
         result = fetch_nm_volumes(client, nm_ids=[123])
-    assert isinstance(result, dict)
-    assert 123 in result
+    assert result == {123: 1.0}
+
+
+def test_fetch_nm_volumes_paginates_until_short_page():
+    client = make_client()
+    page1_cards = [
+        {"nmID": i, "dimensions": {"length": 10, "width": 10, "height": 10}}
+        for i in range(1, 101)
+    ]
+    page1 = {"cards": page1_cards, "cursor": {"updatedAt": "T1", "nmID": 100, "total": 100}}
+    page2 = {"cards": [
+        {"nmID": 200, "dimensions": {"length": 10, "width": 10, "height": 10}},
+    ], "cursor": {"updatedAt": "T2", "nmID": 200, "total": 1}}
+    with patch.object(client, "post", side_effect=[page1, page2]):
+        result = fetch_nm_volumes(client, nm_ids=[50, 200, 9999])
+    assert result == {50: 1.0, 200: 1.0}
+
+
+def test_fetch_nm_volumes_empty_input_returns_empty():
+    client = make_client()
+    with patch.object(client, "post") as p:
+        result = fetch_nm_volumes(client, nm_ids=[])
+    assert result == {}
+    p.assert_not_called()
 
 
 def test_fetch_report_returns_list():

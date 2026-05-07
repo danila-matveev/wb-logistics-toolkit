@@ -28,7 +28,7 @@ def test_run_audit_returns_path():
          patch("audit.run_audit.fetch_report", return_value=[]), \
          patch("audit.run_audit.fetch_box_tariffs", return_value=[]), \
          patch("audit.run_audit.fetch_pallet_tariffs", return_value=[]), \
-         patch("audit.run_audit.fetch_nm_volumes", return_value={}), \
+         patch("audit.run_audit.fetch_card_dimensions", return_value={}), \
          patch("audit.run_audit.fetch_orders", return_value=[]), \
          patch("audit.run_audit.fetch_warehouse_remains", return_value=[]), \
          patch("audit.run_audit.fetch_measurement_penalties", return_value=[]), \

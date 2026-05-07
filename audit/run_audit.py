@@ -18,7 +18,7 @@ from shared.config import get_cabinet
 from shared.wb_api.client import WBClient
 from shared.wb_api.reports import fetch_report
 from shared.wb_api.tariffs import fetch_box_tariffs, fetch_pallet_tariffs
-from shared.wb_api.content import fetch_nm_volumes
+from shared.wb_api.content import fetch_card_dimensions
 from shared.wb_api.orders import fetch_orders
 from shared.wb_api.warehouse_remains import fetch_warehouse_remains
 from shared.wb_api.penalties import fetch_measurement_penalties, fetch_deductions
@@ -71,8 +71,7 @@ def run_audit(config: AuditConfig, output_dir: str = ".") -> str:
 
     logger.info("Fetching card dimensions...")
     nm_ids = list({row.nm_id for row in all_rows if row.nm_id})
-    volumes_raw = fetch_nm_volumes(client, nm_ids)
-    card_dims: dict[int, dict] = {nm: {"volume": v} for nm, v in volumes_raw.items()}
+    card_dims: dict[int, dict] = fetch_card_dimensions(client, nm_ids)
 
     logger.info("Fetching warehouse remains...")
     wb_volumes_raw = fetch_warehouse_remains(client)
