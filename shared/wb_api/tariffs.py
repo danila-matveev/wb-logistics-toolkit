@@ -26,3 +26,17 @@ def fetch_box_tariffs(
         params=params,
     )
     return data.get("response", {}).get("data", {}).get("warehouseList", [])
+
+
+def fetch_pallet_tariffs(
+    client: WBClient,
+    date: str | None = None,
+) -> list[dict[str, Any]]:
+    """Fetch pallet delivery tariffs per warehouse."""
+    params: dict[str, Any] = {"date": date or _date.today().isoformat()}
+    data = client.get(
+        base=WBClient.SUPPLY_URL,
+        path="/api/v1/tariffs/pallet",
+        params=params,
+    )
+    return data.get("response", {}).get("data", {}).get("warehouseList", [])
