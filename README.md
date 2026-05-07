@@ -34,14 +34,13 @@ python check_setup.py
 
 ## Документация
 
-> **Примечание:** Документация создаётся в рамках Plan 4. Файлы появятся в директории `docs/`.
-
-- [Установка](docs/setup.md) _(coming soon)_
-- [Ключевые понятия](docs/concepts.md) _(coming soon)_
-- [Как работать с инструментом](docs/workflow-localization.md) _(coming soon)_
-- [Справочник складов](docs/warehouses.md) _(coming soon)_
-- [Аудит переплат](docs/tool-audit.md) _(coming soon)_
-- [Supabase и тарифы](docs/tariffs-db.md) _(coming soon)_
+- [Установка](docs/setup.md) — от нуля до первого запуска
+- [Ключевые понятия](docs/concepts.md) — ДЛ, ИЛ, ИРП, КТР/КРП простым языком
+- [Воркфлоу оптимизатора](docs/workflow-localization.md) — три фазы: анализ → roadmap → перестановки
+- [Технический гайд — Оптимизатор](docs/tool-localization.md) — API модулей, форматы данных, точки расширения
+- [Аудит переплат](docs/tool-audit.md) — как запустить, читать Excel и подготовить претензию
+- [Справочник складов](docs/warehouses.md) — все склады WB по ФО, статусы, лимиты
+- [Supabase и тарифы](docs/tariffs-db.md) — схема таблиц, первичная загрузка, cron ETL
 
 ## Instrument 1: Localization Optimizer
 
