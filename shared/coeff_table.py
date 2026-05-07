@@ -68,3 +68,32 @@ def clear_cache() -> None:
     global _cache
     with _cache_lock:
         _cache = None
+
+
+def get_coeff_table() -> list[dict[str, Any]]:
+    """Return the full coefficient table (same cached instance as get_ktr_krp uses)."""
+    return _get_table()
+
+
+def calc_financial_impact(
+    krp_pct: float,
+    price: float,
+    orders: int,
+    period_days: int,
+) -> float:
+    """Monthly ИРП financial impact in ₽.
+
+    Args:
+        krp_pct: КРП coefficient in percent (e.g. 2.10).
+        price: Retail price ₽ per unit.
+        orders: Order count for the observed period.
+        period_days: Length of the observed period in days.
+
+    Returns:
+        Estimated ИРП loss ₽/month.
+    """
+    if krp_pct <= 0 or price <= 0 or orders <= 0 or period_days <= 0:
+        return 0.0
+    daily_orders = orders / period_days
+    monthly_orders = daily_orders * 30
+    return krp_pct / 100.0 * price * monthly_orders
