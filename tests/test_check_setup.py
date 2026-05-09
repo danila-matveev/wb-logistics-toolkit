@@ -108,10 +108,58 @@ def test_check_wb_tokens_malformed_yaml(tmp_path, monkeypatch):
     assert ok is False
 
 
-def test_check_supabase_missing_credentials(monkeypatch):
-    from check_setup import check_supabase
-    monkeypatch.delenv("SUPABASE_URL", raising=False)
-    monkeypatch.delenv("SUPABASE_KEY", raising=False)
-    ok, msg = check_supabase()
+def test_check_sqlite_db_missing(tmp_path, monkeypatch):
+    from check_setup import check_sqlite
+    monkeypatch.setenv("WB_TOOLKIT_DB_PATH", str(tmp_path / "missing.db"))
+    ok, msg = check_sqlite()
     assert ok is False
-    assert "missing" in msg.lower()
+    assert "not found" in msg.lower() or "missing" in msg.lower()
+
+
+def test_check_sqlite_db_no_recent_tariffs(tmp_path, monkeypatch):
+    import sqlite3
+    db_path = tmp_path / "stale.db"
+    monkeypatch.setenv("WB_TOOLKIT_DB_PATH", str(db_path))
+    conn = sqlite3.connect(str(db_path))
+    conn.executescript("""
+        CREATE TABLE wb_tariffs (dt TEXT, warehouse_name TEXT,
+            delivery_coef REAL, logistics_1l REAL, logistics_extra_l REAL,
+            box_storage_base REAL, storage_coef REAL, geo_name TEXT,
+            created_at TEXT, PRIMARY KEY (dt, warehouse_name));
+    """)
+    conn.execute(
+        "INSERT INTO wb_tariffs (dt, warehouse_name, created_at) VALUES (?, ?, ?)",
+        ("2020-01-01", "OldWarehouse", "2020-01-01"),
+    )
+    conn.commit()
+    conn.close()
+
+    from check_setup import check_sqlite
+    ok, msg = check_sqlite()
+    assert ok is False
+    assert "7 days" in msg or "stale" in msg.lower()
+
+
+def test_check_sqlite_db_with_recent_tariffs(tmp_path, monkeypatch):
+    import sqlite3
+    from datetime import date
+    db_path = tmp_path / "fresh.db"
+    monkeypatch.setenv("WB_TOOLKIT_DB_PATH", str(db_path))
+    conn = sqlite3.connect(str(db_path))
+    conn.executescript("""
+        CREATE TABLE wb_tariffs (dt TEXT, warehouse_name TEXT,
+            delivery_coef REAL, logistics_1l REAL, logistics_extra_l REAL,
+            box_storage_base REAL, storage_coef REAL, geo_name TEXT,
+            created_at TEXT, PRIMARY KEY (dt, warehouse_name));
+    """)
+    conn.execute(
+        "INSERT INTO wb_tariffs (dt, warehouse_name, created_at) VALUES (?, ?, ?)",
+        (date.today().isoformat(), "Коледино", date.today().isoformat()),
+    )
+    conn.commit()
+    conn.close()
+
+    from check_setup import check_sqlite
+    ok, msg = check_sqlite()
+    assert ok is True
+    assert "OK" in msg or "tariffs" in msg.lower()

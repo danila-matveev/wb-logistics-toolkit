@@ -82,18 +82,34 @@ def check_wb_tokens() -> tuple[bool, str]:
         return False, f"Error reading cabinets.yaml: {e}"
 
 
-def check_supabase() -> tuple[bool, str]:
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
-    if not url or not key:
-        return False, "SUPABASE_URL or SUPABASE_KEY missing in .env"
+def check_sqlite() -> tuple[bool, str]:
+    import sqlite3
+    from datetime import date, timedelta
+
+    db_path = Path(os.environ.get("WB_TOOLKIT_DB_PATH") or "data/wb_toolkit.db")
+    if not db_path.exists():
+        return False, (
+            f"SQLite database not found at '{db_path}'. "
+            "Run: python audit/etl/tariff_collector.py --backfill 7"
+        )
     try:
-        from supabase import create_client
-        client = create_client(url, key)
-        client.table("wb_coeff_table").select("id").limit(1).execute()
-        return True, "Supabase connection OK, wb_coeff_table accessible"
-    except Exception as e:
-        return False, f"Supabase connection failed: {e}"
+        conn = sqlite3.connect(str(db_path))
+        cutoff = (date.today() - timedelta(days=7)).isoformat()
+        row = conn.execute(
+            "SELECT COUNT(*) FROM wb_tariffs WHERE dt >= ?",
+            (cutoff,),
+        ).fetchone()
+        conn.close()
+        count = row[0] if row else 0
+    except sqlite3.Error as e:
+        return False, f"SQLite query failed: {e}"
+
+    if count == 0:
+        return False, (
+            f"SQLite '{db_path}' has no tariffs in the last 7 days. "
+            "Run: python audit/etl/tariff_collector.py --backfill 7"
+        )
+    return True, f"SQLite OK, {count} tariff rows in last 7 days"
 
 
 def check_warehouse_status_yaml() -> tuple[bool, str]:
@@ -109,7 +125,7 @@ CHECKS = [
     ("📋 cabinets.yaml", check_cabinets_yaml),
     ("🏭 warehouse_status.yaml", check_warehouse_status_yaml),
     ("🔐 WB API tokens", check_wb_tokens),
-    ("🗄️  Supabase connection", check_supabase),
+    ("🗄️  SQLite tariffs", check_sqlite),
 ]
 
 
