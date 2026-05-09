@@ -56,14 +56,16 @@
 Логика выбора писателя в `run_*.py`:
 
 ```
-sheet_id указан в cabinets.yaml (не пустой)?
-  ↓ да                               ↓ нет
-credentials.json есть и валиден?     ExcelWriter
+sheet_id указан в cabinets.yaml И не равен "" / "YOUR_SHEET_ID_HERE"?
+  ↓ да                                    ↓ нет
+credentials.json существует?              ExcelWriter
   ↓ да              ↓ нет
 SheetsWriter        ExcelWriter
 ```
 
-Дополнительно — флаг `--no-sheets` форсирует Excel.
+Дополнительно — флаг `--no-sheets` форсирует Excel независимо от конфига.
+
+`cabinets.yaml` в репо хранит `sheet_id: ""` для свежей установки — оператор вписывает реальный id, если хочет Sheets.
 
 ### 1.3. Запуск
 
@@ -234,15 +236,35 @@ Phase 2/3 читают cache от Phase 1 — Phase 1 нужно прогнат�
 
 ### Фаза А — SQLite-миграция (0.5 дня)
 
-- `shared/db.py` (новый): тонкий sqlite3 wrapper, при первом подключении выставляет `PRAGMA journal_mode=WAL`, создаёт таблицу `wb_tariffs(warehouse_name TEXT, dt DATE, delivery_coef_pct NUMERIC, box_delivery_base NUMERIC, box_delivery_liter NUMERIC, created_at TIMESTAMP, PRIMARY KEY (warehouse_name, dt))`.
-- `shared/coeff_table.py` — оставляем константу `COEFF_TABLE`, удаляем загрузку из БД.
-- `audit/etl/tariff_collector.py` — `INSERT ... ON CONFLICT(warehouse_name, dt) DO UPDATE SET ...`.
-- `audit/calculators/warehouse_coef_resolver.py` — `SELECT ... FROM wb_tariffs WHERE ...` через sqlite3.
-- `scripts/migrate_supabase_to_sqlite.py` — выкачивает текущие 61 склад × 60 дней из Supabase, заливает в новый SQLite-файл. Запускается один раз, после прогона — удаляется коммитом.
+- `shared/db.py` (новый): тонкий sqlite3 wrapper, при первом подключении выставляет `PRAGMA journal_mode=WAL` и создаёт таблицу со схемой 1-в-1 как сейчас в Supabase (имена колонок не меняем, чтобы минимизировать diff в calculator/collector):
+  ```sql
+  CREATE TABLE IF NOT EXISTS wb_tariffs (
+    dt                TEXT NOT NULL,    -- ISO date (sqlite не имеет нативного DATE)
+    warehouse_name    TEXT NOT NULL,
+    delivery_coef     REAL,
+    logistics_1l      REAL,
+    logistics_extra_l REAL,
+    box_storage_base  REAL,
+    storage_coef      REAL,
+    geo_name          TEXT,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (dt, warehouse_name)
+  );
+  ```
+  Путь к файлу — `WB_TOOLKIT_DB_PATH` из `.env` (default `data/wb_toolkit.db`).
+- `shared/coeff_table.py` — заменяем `_load_from_supabase()` на embedded-литерал `COEFF_TABLE: list[dict] = [...]` с 20 строками, выгруженными из текущего Supabase (`select min_loc, max_loc, ktr, krp_pct from wb_coeff_table order by min_loc`). `get_ktr_krp()` читает константу напрямую, без БД.
+- `audit/etl/tariff_collector.py` — `INSERT ... ON CONFLICT(dt, warehouse_name) DO UPDATE SET ...`. Импорт `shared.supabase` → `shared.db`.
+- `audit/calculators/warehouse_coef_resolver.py` — функцию `load_supabase_tariffs()` переименовываем в `load_tariffs()`, тело: `SELECT dt, warehouse_name, delivery_coef FROM wb_tariffs WHERE dt BETWEEN ? AND ?` через sqlite3. Соответственно правим вызов в `audit/run_audit.py` и patch-target в `tests/audit/test_run_audit.py`.
+- `scripts/migrate_supabase_to_sqlite.py` — одноразовый: подключается к Supabase, `select * from wb_tariffs`, заливает в новый SQLite через `INSERT OR REPLACE`. Запускается один раз вручную после деплоя на сервер; после прогона коммитом удаляется.
 - Удаляем `audit/etl/import_coeff_table.py`, `shared/supabase.py`.
 - Убираем `supabase>=2.4.0` из `requirements.txt`.
-- `check_setup.py` — заменяем чек Supabase на SQLite-чек (существование файла + строки за 7 дней).
-- Обновляем тесты (мокаем `shared.db.get_connection` вместо `shared.supabase.get_supabase_client`).
+- Из `.env.example` убираем `SUPABASE_URL` и `SUPABASE_KEY`, добавляем `WB_TOOLKIT_DB_PATH=data/wb_toolkit.db`.
+- `check_setup.py` — функцию `check_supabase()` заменяем на `check_sqlite()`: файл существует + есть `wb_tariffs.dt >= today - 7`.
+- Обновляем тесты:
+  - `tests/test_check_setup.py` — `check_supabase` → `check_sqlite`.
+  - `tests/shared/test_coeff_table.py` — выкидываем supabase-моки, проверяем `get_ktr_krp()` напрямую на embedded литерале.
+  - `tests/audit/test_run_audit.py` — patch `audit.run_audit.load_tariffs` (новое имя).
+  - `tests/audit/test_etl.py` — patch `shared.db.get_connection` вместо `shared.supabase.get_supabase_client`.
 - **Зависимости:** —
 - **Коммит:** `feat(db): replace Supabase with local SQLite storage`
 
@@ -254,8 +276,11 @@ Phase 2/3 читают cache от Phase 1 — Phase 1 нужно прогнат�
 - В Phase 1/2/3 раннерах:
   - выбор писателя по правилу из §1.2.
   - флаг `--no-sheets` форсирует Excel.
-- Унификация: везде в коде `os.environ["GOOGLE_CREDENTIALS_PATH"]` (убираем `GOOGLE_CREDENTIALS_JSON`).
+- Унификация: везде в коде `os.environ["GOOGLE_CREDENTIALS_PATH"]` (убираем `GOOGLE_CREDENTIALS_JSON` из `shared/sheets_client.py` и `localization/run_*.py`; `.env.example` уже на `_PATH`).
+- Обновляем `cabinets.yaml`: `sheet_id: ""` для обоих кабинетов (вместо текущего `"YOUR_SHEET_ID_HERE"`).
+- Добавляем `localization/data/output/` в `.gitignore` (Excel-файлы не коммитим).
 - Unit-тесты для `ExcelWriter`: несколько листов, корректные заголовки, пустые данные не падают.
+- Тест на логику выбора писателя: пустой `sheet_id` → Excel; валидный + creds → Sheets; флаг `--no-sheets` → Excel при любом конфиге.
 - **Зависимости:** —
 - **Коммит:** `refactor(localization): Excel-fallback writer + unify GOOGLE_CREDENTIALS_PATH`
 
