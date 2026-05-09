@@ -33,7 +33,7 @@ def test_run_audit_returns_path():
          patch("audit.run_audit.fetch_warehouse_remains", return_value=[]), \
          patch("audit.run_audit.fetch_measurement_penalties", return_value=[]), \
          patch("audit.run_audit.fetch_deductions", return_value=[]), \
-         patch("audit.run_audit.load_supabase_tariffs", return_value={}), \
+         patch("audit.run_audit.load_tariffs", return_value={}), \
          patch("audit.run_audit.calculate_weekly_il", return_value=({}, [])), \
          patch("audit.run_audit.generate_workbook", return_value=mock_wb):
         path = run_audit(config, output_dir="/tmp")

@@ -26,7 +26,7 @@ from audit.models.audit_config import AuditConfig
 from audit.models.report_row import ReportRow
 from audit.models.tariff_snapshot import TariffSnapshot
 from audit.calculators.tariff_periods import get_base_tariffs
-from audit.calculators.warehouse_coef_resolver import resolve_warehouse_coef, load_supabase_tariffs
+from audit.calculators.warehouse_coef_resolver import resolve_warehouse_coef, load_tariffs
 from audit.calculators.logistics_overpayment import (
     calculate_row_overpayment, OverpaymentResult, FORMULA_CHANGE_DATE,
 )
@@ -109,9 +109,9 @@ def run_audit(config: AuditConfig, output_dir: str = ".") -> str:
         sku_localization = calculate_sku_localization(orders)
         logger.info("Localization data for %d SKUs", len(sku_localization))
 
-    # Step 5: Load Supabase historical tariffs
-    logger.info("Loading Supabase tariffs...")
-    supabase_tariffs = load_supabase_tariffs(config.date_from, config.date_to)
+    # Step 5: Load historical tariffs from SQLite
+    logger.info("Loading historical tariffs...")
+    supabase_tariffs = load_tariffs(config.date_from, config.date_to)
 
     # Step 6: Calculate per-row overpayments
     results: list[OverpaymentResult | None] = []
