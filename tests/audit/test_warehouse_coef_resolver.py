@@ -2,6 +2,7 @@ from datetime import date
 from audit.calculators.warehouse_coef_resolver import (
     resolve_warehouse_coef,
     CoefResult,
+    load_tariffs,
 )
 
 
@@ -69,12 +70,6 @@ def test_resolve_zero_coef_fallback():
         supabase_tariffs={},
     )
     assert result.value == 0.0
-
-
-import sqlite3
-from datetime import date
-
-from audit.calculators.warehouse_coef_resolver import load_tariffs
 
 
 def test_load_tariffs_reads_from_sqlite(tmp_path, monkeypatch):
