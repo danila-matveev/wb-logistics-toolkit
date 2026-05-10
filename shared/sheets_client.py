@@ -14,25 +14,21 @@ _SCOPES = [
 ]
 
 
-def get_client(credentials_json: str | None = None) -> gspread.Client:
+def get_client(credentials_path: str | None = None) -> gspread.Client:
     """Build authenticated gspread Client.
 
     Args:
-        credentials_json: Path to service account JSON, or raw JSON string.
-            Falls back to GOOGLE_CREDENTIALS_JSON env var if None.
+        credentials_path: Path to service account JSON file. Falls back to
+            GOOGLE_CREDENTIALS_PATH env var if None.
     """
-    raw = credentials_json or os.environ.get("GOOGLE_CREDENTIALS_JSON", "")
-    if not raw:
+    path = credentials_path or os.environ.get("GOOGLE_CREDENTIALS_PATH", "")
+    if not path:
         raise ValueError(
-            "No Google credentials. Set GOOGLE_CREDENTIALS_JSON env var "
-            "or pass credentials_json=."
+            "No Google credentials. Set GOOGLE_CREDENTIALS_PATH in .env "
+            "or pass credentials_path=."
         )
-    try:
-        info = json.loads(raw)
-    except json.JSONDecodeError:
-        with open(raw, encoding="utf-8") as f:
-            info = json.load(f)
-
+    with open(path, encoding="utf-8") as f:
+        info = json.load(f)
     creds = Credentials.from_service_account_info(info, scopes=_SCOPES)
     return gspread.authorize(creds)
 
