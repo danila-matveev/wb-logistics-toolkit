@@ -1,19 +1,15 @@
-"""Write Phase 2 (13-week roadmap) to Google Sheets."""
+"""Write Phase 2 (13-week roadmap) via a Writer."""
 from __future__ import annotations
 
 from typing import Any
 
-import gspread
+from shared.sheets_client import to_number
 
-from shared.sheets_client import clear_and_write, get_or_create_worksheet, to_number
+from localization.output.writer import Writer
 
 
-def write_roadmap(
-    spreadsheet: gspread.Spreadsheet,
-    roadmap_result: dict[str, Any],
-) -> None:
+def write_roadmap(writer: Writer, roadmap_result: dict[str, Any]) -> None:
     """Write simulate_roadmap() output to sheet "Роадмап 13 нед."."""
-    ws = get_or_create_worksheet(spreadsheet, "Роадмап 13 нед.")
     params = roadmap_result.get("params", {})
     milestones = roadmap_result.get("milestones", {})
     roadmap = roadmap_result.get("roadmap", [])
@@ -51,4 +47,4 @@ def write_roadmap(
             to_number(week.get("savings_vs_current", 0)),
         ])
 
-    clear_and_write(ws, meta_rows + data_rows)
+    writer.write_sheet("Роадмап 13 нед.", meta_rows + data_rows)

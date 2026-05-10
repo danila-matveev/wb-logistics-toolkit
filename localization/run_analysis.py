@@ -56,6 +56,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="WB Localization Phase 1: ИЛ/ИРП analysis")
     parser.add_argument("cabinet", help="Cabinet name from cabinets.yaml (e.g. MAIN)")
     parser.add_argument("--days", type=int, default=30, help="Analysis period in days (default: 30)")
+    parser.add_argument(
+        "--no-sheets",
+        action="store_true",
+        help="Force Excel output even if Sheets is configured",
+    )
     args = parser.parse_args()
 
     cabinet = get_cabinet(args.cabinet)
@@ -109,19 +114,24 @@ def main() -> None:
     save_cache(args.cabinet, cache_payload)
     print(f"  Cache saved → localization/data/cache/{args.cabinet}_latest.json")
 
+    from localization.output.writer import SheetsWriter, make_writer
+    from localization.output.analysis_writer import write_analysis
+
+    excel_path = f"localization/data/output/Локализация Анализ {args.cabinet}.xlsx"
     try:
-        import os
-        if not os.environ.get("GOOGLE_CREDENTIALS_JSON"):
-            print("  Sheets: GOOGLE_CREDENTIALS_JSON not set, skipping.")
-            return
-        from shared.sheets_client import get_client
-        from localization.sheets.analysis_writer import write_analysis
-        gc = get_client()
-        spreadsheet = gc.open_by_key(cabinet.sheet_id)
-        write_analysis(spreadsheet, il_irp, scenarios)
-        print(f"  Sheets updated: {cabinet.sheet_id}")
+        writer = make_writer(
+            sheet_id=cabinet.sheet_id,
+            excel_path=excel_path,
+            force_excel=args.no_sheets,
+        )
+        write_analysis(writer, il_irp, scenarios)
+        out = writer.finalize()
+        if isinstance(writer, SheetsWriter):
+            print(f"  Sheets updated: {cabinet.sheet_id}")
+        else:
+            print(f"  Excel saved: {out}")
     except Exception as exc:
-        print(f"  Sheets export failed (non-fatal): {exc}")
+        print(f"  Output failed (non-fatal): {exc}")
 
 
 if __name__ == "__main__":

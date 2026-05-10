@@ -1,38 +1,27 @@
-"""Write Phase 1 (ИЛ/ИРП) analysis results to Google Sheets."""
+"""Write Phase 1 (ИЛ/ИРП) analysis results via a Writer."""
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 
-import gspread
+from shared.sheets_client import to_number
 
-from shared.sheets_client import clear_and_write, get_or_create_worksheet, to_number
+from localization.output.writer import Writer
 
 
 def write_analysis(
-    spreadsheet: gspread.Spreadsheet,
+    writer: Writer,
     il_irp: dict[str, Any],
     scenarios: dict[str, Any],
 ) -> None:
-    """Write ИЛ/ИРП analysis and scenario tables to spreadsheet.
-
-    Sheets created/updated:
-        "ИЛ-ИРП Анализ"  — per-article metrics
-        "Сценарии"        — scenario economics
-        "Топ проблем"     — top-10 problem articles
-        "Дашборд ИЛ"      — summary KPIs
-    """
-    _write_articles(spreadsheet, il_irp.get("articles", []))
-    _write_scenarios(spreadsheet, scenarios)
-    _write_top_problems(spreadsheet, il_irp.get("top_problems", []))
-    _write_dashboard(spreadsheet, il_irp.get("summary", {}), scenarios)
+    """Write ИЛ/ИРП analysis and scenario tables via the writer."""
+    _write_articles(writer, il_irp.get("articles", []))
+    _write_scenarios(writer, scenarios)
+    _write_top_problems(writer, il_irp.get("top_problems", []))
+    _write_dashboard(writer, il_irp.get("summary", {}), scenarios)
 
 
-def _write_articles(
-    spreadsheet: gspread.Spreadsheet,
-    articles: list[dict[str, Any]],
-) -> None:
-    ws = get_or_create_worksheet(spreadsheet, "ИЛ-ИРП Анализ")
+def _write_articles(writer: Writer, articles: list[dict[str, Any]]) -> None:
     header = [
         "Артикул", "Локальных", "Нелокальных", "Всего", "Локал. %",
         "КТР", "КРП %", "Статус", "Цена", "ИРП/заказ ₽", "ИРП/мес ₽",
@@ -55,14 +44,10 @@ def _write_articles(
             to_number(a.get("contribution", 0)),
             a.get("weakest_region", ""),
         ])
-    clear_and_write(ws, rows)
+    writer.write_sheet("ИЛ-ИРП Анализ", rows)
 
 
-def _write_scenarios(
-    spreadsheet: gspread.Spreadsheet,
-    scenarios: dict[str, Any],
-) -> None:
-    ws = get_or_create_worksheet(spreadsheet, "Сценарии")
+def _write_scenarios(writer: Writer, scenarios: dict[str, Any]) -> None:
     header = [
         "Уровень лок. %", "Логистика ₽/мес", "ИРП ₽/мес", "Итого ₽/мес",
         "КТР", "КРП %", "Δ к текущему ₽", "Δ к худшему ₽",
@@ -87,14 +72,10 @@ def _write_scenarios(
             to_number(sc.get("delta_vs_current", 0)),
             to_number(sc.get("delta_vs_worst", 0)),
         ])
-    clear_and_write(ws, rows)
+    writer.write_sheet("Сценарии", rows)
 
 
-def _write_top_problems(
-    spreadsheet: gspread.Spreadsheet,
-    top_problems: list[dict[str, Any]],
-) -> None:
-    ws = get_or_create_worksheet(spreadsheet, "Топ проблем")
+def _write_top_problems(writer: Writer, top_problems: list[dict[str, Any]]) -> None:
     header = [
         "#", "Артикул", "Заказов", "Лок. %", "КТР", "КРП %",
         "Вклад в ИЛ", "Слабый регион", "Рекомендация",
@@ -112,15 +93,12 @@ def _write_top_problems(
             p.get("weakest_region", ""),
             p.get("recommendation", ""),
         ])
-    clear_and_write(ws, rows)
+    writer.write_sheet("Топ проблем", rows)
 
 
 def _write_dashboard(
-    spreadsheet: gspread.Spreadsheet,
-    summary: dict[str, Any],
-    scenarios: dict[str, Any],
+    writer: Writer, summary: dict[str, Any], scenarios: dict[str, Any]
 ) -> None:
-    ws = get_or_create_worksheet(spreadsheet, "Дашборд ИЛ")
     eco = scenarios.get("relocation_economics", {})
     rows = [
         ["Обновлено", datetime.now().strftime("%d.%m.%Y %H:%M")],
@@ -139,4 +117,4 @@ def _write_dashboard(
         ["Макс. экономия ₽/мес", to_number(eco.get("max_savings_monthly", 0))],
         ["Чистая выгода ₽/мес", to_number(eco.get("net_benefit_monthly", 0))],
     ]
-    clear_and_write(ws, rows)
+    writer.write_sheet("Дашборд ИЛ", rows)

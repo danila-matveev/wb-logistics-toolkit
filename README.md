@@ -50,7 +50,7 @@ Three-phase workflow for optimizing WB Индекс Локализации.
 
 1. Supabase `wb_coeff_table` populated (see `audit/etl/import_coeff_table.py`)
 2. `cabinets.yaml` — cabinet name, WB token env var, Google Sheet ID
-3. `.env` — `WB_TOKEN_<CABINET>=...` and optionally `GOOGLE_CREDENTIALS_JSON=...`
+3. `.env` — `WB_TOKEN_<CABINET>=...` and optionally `GOOGLE_CREDENTIALS_PATH=...`
 
 ### Phase 1 — ИЛ/ИРП Analysis
 

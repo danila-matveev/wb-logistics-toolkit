@@ -29,6 +29,11 @@ def main() -> None:
     parser.add_argument("cabinet", help="Cabinet name from cabinets.yaml")
     parser.add_argument("--safety-days", type=int, default=14,
                         help="Days of stock to protect at donor (default: 14)")
+    parser.add_argument(
+        "--no-sheets",
+        action="store_true",
+        help="Force Excel output even if Sheets is configured",
+    )
     args = parser.parse_args()
 
     cache = load_cache(args.cabinet)
@@ -65,19 +70,24 @@ def main() -> None:
         print(f"    {fd_row['fd']:35s}  stock={fd_row['stock_total']:5d}  "
               f"orders={fd_row['orders_total']:5d}  loc={fd_row['loc_pct']:5.1f}%")
 
+    from localization.output.writer import SheetsWriter, make_writer
+    from localization.output.permutations_writer import write_permutations
+
+    excel_path = f"localization/data/output/Локализация Перестановки {args.cabinet}.xlsx"
     try:
-        import os
-        if not os.environ.get("GOOGLE_CREDENTIALS_JSON"):
-            print("  Sheets: GOOGLE_CREDENTIALS_JSON not set, skipping.")
-            return
-        from shared.sheets_client import get_client
-        from localization.sheets.permutations_writer import write_permutations
-        gc = get_client()
-        spreadsheet = gc.open_by_key(cabinet.sheet_id)
-        write_permutations(spreadsheet, result)
-        print(f"  Sheets updated: {cabinet.sheet_id}")
+        writer = make_writer(
+            sheet_id=cabinet.sheet_id,
+            excel_path=excel_path,
+            force_excel=args.no_sheets,
+        )
+        write_permutations(writer, result)
+        out = writer.finalize()
+        if isinstance(writer, SheetsWriter):
+            print(f"  Sheets updated: {cabinet.sheet_id}")
+        else:
+            print(f"  Excel saved: {out}")
     except Exception as exc:
-        print(f"  Sheets export failed (non-fatal): {exc}")
+        print(f"  Output failed (non-fatal): {exc}")
 
 
 if __name__ == "__main__":
