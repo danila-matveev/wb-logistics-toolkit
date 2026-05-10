@@ -12,7 +12,7 @@ def test_resolve_fixation_tier():
         fixation_end=date(2026, 6, 1),
         order_date=date(2026, 3, 1),
         warehouse_name="Коледино",
-        supabase_tariffs={},
+        tariffs={},
     )
     assert result.source == "fixation"
     assert result.value == 95.0
@@ -27,7 +27,7 @@ def test_resolve_fixation_expired():
         fixation_end=date(2026, 3, 1),
         order_date=date(2026, 3, 1),
         warehouse_name="Коледино",
-        supabase_tariffs=tariffs,
+        tariffs=tariffs,
     )
     assert result.source == "sqlite"
 
@@ -42,7 +42,7 @@ def test_resolve_sqlite_tier_closest_date():
     result = resolve_warehouse_coef(
         dlv_prc=0.0, fixed_coef=0.0,
         fixation_end=None, order_date=date(2026, 3, 15),
-        warehouse_name="Коледино", supabase_tariffs=tariffs,
+        warehouse_name="Коледино", tariffs=tariffs,
     )
     assert result.source == "sqlite"
     assert result.value == 1.05
@@ -54,7 +54,7 @@ def test_resolve_dlv_prc_fallback():
         dlv_prc=1.2, fixed_coef=0.0,
         fixation_end=None, order_date=date(2026, 3, 15),
         warehouse_name="НеизвестныйСклад",
-        supabase_tariffs={},
+        tariffs={},
     )
     assert result.source == "dlv_prc"
     assert result.verified is False
@@ -67,7 +67,7 @@ def test_resolve_zero_coef_fallback():
         dlv_prc=0.0, fixed_coef=0.0,
         fixation_end=None, order_date=None,
         warehouse_name="НеизвестныйСклад",
-        supabase_tariffs={},
+        tariffs={},
     )
     assert result.value == 0.0
 

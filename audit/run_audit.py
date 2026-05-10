@@ -111,7 +111,7 @@ def run_audit(config: AuditConfig, output_dir: str = ".") -> str:
 
     # Step 5: Load historical tariffs from SQLite
     logger.info("Loading historical tariffs...")
-    supabase_tariffs = load_tariffs(config.date_from, config.date_to)
+    tariffs = load_tariffs(config.date_from, config.date_to)
 
     # Step 6: Calculate per-row overpayments
     results: list[OverpaymentResult | None] = []
@@ -127,7 +127,7 @@ def run_audit(config: AuditConfig, output_dir: str = ".") -> str:
             fixation_end=row.fix_tariff_date_to,
             order_date=row.order_dt,
             warehouse_name=row.office_name,
-            supabase_tariffs=supabase_tariffs,
+            tariffs=tariffs,
         )
         coefs.append(coef_result.value)
 

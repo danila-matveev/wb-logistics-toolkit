@@ -23,22 +23,19 @@ def resolve_warehouse_coef(
     fixation_end: date | None,
     order_date: date | None,
     warehouse_name: str,
-    supabase_tariffs: dict[str, dict[date, float]],
+    tariffs: dict[str, dict[date, float]],
 ) -> CoefResult:
     """Resolve warehouse coefficient with 3-tier priority.
 
     Priority:
     1. Fixed coefficient (if fixation is active: fixation_end > order_date)
-    2. Historical tariffs from SQLite (param name kept for backwards compat)
+    2. Historical tariffs from SQLite
     3. dlv_prc from report (fallback, not verified)
-
-    The `supabase_tariffs` parameter name is preserved to avoid touching every
-    call site in this PR; the data is still passed in the same shape.
     """
     if fixed_coef > 0 and fixation_end and order_date and fixation_end > order_date:
         return CoefResult(value=fixed_coef, source="fixation", verified=True)
 
-    wh_tariffs = supabase_tariffs.get(warehouse_name)
+    wh_tariffs = tariffs.get(warehouse_name)
     if wh_tariffs and order_date:
         matching_dates = [d for d in wh_tariffs if d <= order_date]
         if matching_dates:
