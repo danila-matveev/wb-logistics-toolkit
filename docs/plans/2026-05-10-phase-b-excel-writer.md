@@ -73,11 +73,8 @@ Expected: 157 passed, 0 failed.
 
 ```python
 # tests/localization/output/test_writer.py
-import os
-from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from openpyxl import load_workbook
 
 from localization.output.writer import ExcelWriter, SheetsWriter, make_writer
@@ -127,10 +124,8 @@ def test_excel_writer_creates_parent_dir(tmp_path):
     assert out.exists()
 
 
-def test_make_writer_picks_excel_when_no_sheet_id(tmp_path, monkeypatch):
-    monkeypatch.setenv("GOOGLE_CREDENTIALS_PATH", "")
+def test_make_writer_picks_excel_when_no_sheet_id(tmp_path):
     w = make_writer(
-        cabinet_name="ooo",
         sheet_id="",
         excel_path=str(tmp_path / "out.xlsx"),
         force_excel=False,
@@ -140,7 +135,6 @@ def test_make_writer_picks_excel_when_no_sheet_id(tmp_path, monkeypatch):
 
 def test_make_writer_picks_excel_when_placeholder_sheet_id(tmp_path):
     w = make_writer(
-        cabinet_name="ooo",
         sheet_id="YOUR_SHEET_ID_HERE",
         excel_path=str(tmp_path / "out.xlsx"),
         force_excel=False,
@@ -151,7 +145,6 @@ def test_make_writer_picks_excel_when_placeholder_sheet_id(tmp_path):
 def test_make_writer_picks_excel_when_creds_missing(tmp_path, monkeypatch):
     monkeypatch.setenv("GOOGLE_CREDENTIALS_PATH", str(tmp_path / "missing.json"))
     w = make_writer(
-        cabinet_name="ooo",
         sheet_id="1AbCxyz",
         excel_path=str(tmp_path / "out.xlsx"),
         force_excel=False,
@@ -164,7 +157,6 @@ def test_make_writer_force_excel_overrides_valid_config(tmp_path, monkeypatch):
     creds.write_text("{}")
     monkeypatch.setenv("GOOGLE_CREDENTIALS_PATH", str(creds))
     w = make_writer(
-        cabinet_name="ooo",
         sheet_id="1AbCxyz",
         excel_path=str(tmp_path / "out.xlsx"),
         force_excel=True,
@@ -182,7 +174,6 @@ def test_make_writer_picks_sheets_when_all_conditions_met(tmp_path, monkeypatch)
         return_value=fake_spreadsheet,
     ) as mock_open:
         w = make_writer(
-            cabinet_name="ooo",
             sheet_id="1AbCxyz",
             excel_path=str(tmp_path / "out.xlsx"),
             force_excel=False,
@@ -298,7 +289,6 @@ def _open_spreadsheet(sheet_id: str) -> Any:
 
 def make_writer(
     *,
-    cabinet_name: str,
     sheet_id: str | None,
     excel_path: str,
     force_excel: bool,
@@ -697,9 +687,21 @@ git commit -m "refactor(localization): port permutations writer to Writer protoc
 **Files:**
 - Modify: `localization/run_analysis.py`
 
-- [ ] **Step 5.1: Заменить блок Sheets-export на writer-pattern**
+- [ ] **Step 5.1: Добавить `--no-sheets` в argparse**
 
-В `localization/run_analysis.py` заменить hop в самом конце `main()`:
+В `localization/run_analysis.py` в `main()` рядом с другими `parser.add_argument(...)` (после `--days`) добавить:
+
+```python
+parser.add_argument(
+    "--no-sheets",
+    action="store_true",
+    help="Force Excel output even if Sheets is configured",
+)
+```
+
+- [ ] **Step 5.2: Заменить блок Sheets-export на writer-pattern**
+
+В `localization/run_analysis.py` заменить хвост `main()`:
 
 OLD:
 ```python
@@ -720,13 +722,12 @@ OLD:
 
 NEW:
 ```python
-    from localization.output.writer import ExcelWriter, SheetsWriter, make_writer
+    from localization.output.writer import SheetsWriter, make_writer
     from localization.output.analysis_writer import write_analysis
 
     excel_path = f"localization/data/output/Локализация Анализ {args.cabinet}.xlsx"
     try:
         writer = make_writer(
-            cabinet_name=args.cabinet,
             sheet_id=cabinet.sheet_id,
             excel_path=excel_path,
             force_excel=args.no_sheets,
@@ -739,18 +740,6 @@ NEW:
             print(f"  Excel saved: {out}")
     except Exception as exc:
         print(f"  Output failed (non-fatal): {exc}")
-```
-
-- [ ] **Step 5.2: Добавить `--no-sheets` в argparse**
-
-В `_parse_args()` (или в `main()` argparse) добавить:
-
-```python
-parser.add_argument(
-    "--no-sheets",
-    action="store_true",
-    help="Force Excel output even if Sheets is configured",
-)
 ```
 
 - [ ] **Step 5.3: Sanity без живого WB API (через unit-mock не делаем, но синтаксис должен работать)**
@@ -789,14 +778,25 @@ git commit -m "feat(localization): wire analysis runner to Writer + --no-sheets"
 
 OLD блок (try/except sheets) → NEW (writer-pattern):
 
+Сначала добавить `--no-sheets` в `argparse`:
+
 ```python
-    from localization.output.writer import ExcelWriter, SheetsWriter, make_writer
+parser.add_argument(
+    "--no-sheets",
+    action="store_true",
+    help="Force Excel output even if Sheets is configured",
+)
+```
+
+Затем заменить хвост `main()`:
+
+```python
+    from localization.output.writer import SheetsWriter, make_writer
     from localization.output.roadmap_writer import write_roadmap
 
     excel_path = f"localization/data/output/Локализация Roadmap {args.cabinet}.xlsx"
     try:
         writer = make_writer(
-            cabinet_name=args.cabinet,
             sheet_id=cabinet.sheet_id,
             excel_path=excel_path,
             force_excel=args.no_sheets,
@@ -811,18 +811,19 @@ OLD блок (try/except sheets) → NEW (writer-pattern):
         print(f"  Output failed (non-fatal): {exc}")
 ```
 
-Добавить `--no-sheets` флаг в `argparse`.
-
 - [ ] **Step 6.2: `run_permutations.py` — то же**
 
+Сначала добавить `--no-sheets` в `argparse` (так же, как в Step 6.1).
+
+Затем заменить хвост `main()`:
+
 ```python
-    from localization.output.writer import ExcelWriter, SheetsWriter, make_writer
+    from localization.output.writer import SheetsWriter, make_writer
     from localization.output.permutations_writer import write_permutations
 
     excel_path = f"localization/data/output/Локализация Перестановки {args.cabinet}.xlsx"
     try:
         writer = make_writer(
-            cabinet_name=args.cabinet,
             sheet_id=cabinet.sheet_id,
             excel_path=excel_path,
             force_excel=args.no_sheets,
@@ -836,8 +837,6 @@ OLD блок (try/except sheets) → NEW (writer-pattern):
     except Exception as exc:
         print(f"  Output failed (non-fatal): {exc}")
 ```
-
-Добавить `--no-sheets` флаг.
 
 - [ ] **Step 6.3: Sanity**
 
