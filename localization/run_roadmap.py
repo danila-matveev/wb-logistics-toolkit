@@ -30,6 +30,11 @@ def main() -> None:
                         help="Target localization %% (default: 85)")
     parser.add_argument("--limit", type=float, default=0.3,
                         help="Realistic slot fraction (default: 0.3)")
+    parser.add_argument(
+        "--no-sheets",
+        action="store_true",
+        help="Force Excel output even if Sheets is configured",
+    )
     args = parser.parse_args()
 
     cache = load_cache(args.cabinet)
@@ -87,19 +92,24 @@ def main() -> None:
     milestones = roadmap_result["milestones"]
     print(f"  Week 60%: {milestones['week_60pct']}  Week 80%: {milestones['week_80pct']}")
 
+    from localization.output.writer import SheetsWriter, make_writer
+    from localization.output.roadmap_writer import write_roadmap
+
+    excel_path = f"localization/data/output/Локализация Roadmap {args.cabinet}.xlsx"
     try:
-        import os
-        if not os.environ.get("GOOGLE_CREDENTIALS_JSON"):
-            print("  Sheets: GOOGLE_CREDENTIALS_JSON not set, skipping.")
-            return
-        from shared.sheets_client import get_client
-        from localization.sheets.roadmap_writer import write_roadmap
-        gc = get_client()
-        spreadsheet = gc.open_by_key(cabinet.sheet_id)
-        write_roadmap(spreadsheet, roadmap_result)
-        print(f"  Sheets updated: {cabinet.sheet_id}")
+        writer = make_writer(
+            sheet_id=cabinet.sheet_id,
+            excel_path=excel_path,
+            force_excel=args.no_sheets,
+        )
+        write_roadmap(writer, roadmap_result)
+        out = writer.finalize()
+        if isinstance(writer, SheetsWriter):
+            print(f"  Sheets updated: {cabinet.sheet_id}")
+        else:
+            print(f"  Excel saved: {out}")
     except Exception as exc:
-        print(f"  Sheets export failed (non-fatal): {exc}")
+        print(f"  Output failed (non-fatal): {exc}")
 
 
 if __name__ == "__main__":
