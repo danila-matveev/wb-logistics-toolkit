@@ -50,9 +50,9 @@ def test_client_raises_on_http_error():
             )
 
 
-def test_client_default_timeout_is_30():
+def test_client_default_timeout_is_120():
     client = WBClient(token="tok")
-    assert client.timeout == 30.0
+    assert client.timeout == 120.0
 
 
 def test_client_custom_timeout():

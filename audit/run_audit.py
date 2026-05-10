@@ -8,14 +8,17 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from datetime import date, timedelta
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.config import get_cabinet
 from shared.wb_api.client import WBClient
 from shared.wb_api.reports import fetch_report
 from shared.wb_api.tariffs import fetch_box_tariffs, fetch_pallet_tariffs
-from shared.wb_api.content import fetch_nm_volumes
+from shared.wb_api.content import fetch_card_dimensions
 from shared.wb_api.orders import fetch_orders
 from shared.wb_api.warehouse_remains import fetch_warehouse_remains
 from shared.wb_api.penalties import fetch_measurement_penalties, fetch_deductions
@@ -23,7 +26,7 @@ from audit.models.audit_config import AuditConfig
 from audit.models.report_row import ReportRow
 from audit.models.tariff_snapshot import TariffSnapshot
 from audit.calculators.tariff_periods import get_base_tariffs
-from audit.calculators.warehouse_coef_resolver import resolve_warehouse_coef, load_supabase_tariffs
+from audit.calculators.warehouse_coef_resolver import resolve_warehouse_coef, load_tariffs
 from audit.calculators.logistics_overpayment import (
     calculate_row_overpayment, OverpaymentResult, FORMULA_CHANGE_DATE,
 )
@@ -68,8 +71,7 @@ def run_audit(config: AuditConfig, output_dir: str = ".") -> str:
 
     logger.info("Fetching card dimensions...")
     nm_ids = list({row.nm_id for row in all_rows if row.nm_id})
-    volumes_raw = fetch_nm_volumes(client, nm_ids)
-    card_dims: dict[int, dict] = {nm: {"volume": v} for nm, v in volumes_raw.items()}
+    card_dims: dict[int, dict] = fetch_card_dimensions(client, nm_ids)
 
     logger.info("Fetching warehouse remains...")
     wb_volumes_raw = fetch_warehouse_remains(client)
@@ -107,9 +109,9 @@ def run_audit(config: AuditConfig, output_dir: str = ".") -> str:
         sku_localization = calculate_sku_localization(orders)
         logger.info("Localization data for %d SKUs", len(sku_localization))
 
-    # Step 5: Load Supabase historical tariffs
-    logger.info("Loading Supabase tariffs...")
-    supabase_tariffs = load_supabase_tariffs(config.date_from, config.date_to)
+    # Step 5: Load historical tariffs from SQLite
+    logger.info("Loading historical tariffs...")
+    tariffs = load_tariffs(config.date_from, config.date_to)
 
     # Step 6: Calculate per-row overpayments
     results: list[OverpaymentResult | None] = []
@@ -125,7 +127,7 @@ def run_audit(config: AuditConfig, output_dir: str = ".") -> str:
             fixation_end=row.fix_tariff_date_to,
             order_date=row.order_dt,
             warehouse_name=row.office_name,
-            supabase_tariffs=supabase_tariffs,
+            tariffs=tariffs,
         )
         coefs.append(coef_result.value)
 

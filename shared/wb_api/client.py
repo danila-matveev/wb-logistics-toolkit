@@ -18,8 +18,9 @@ class WBClient:
     CONTENT_URL = "https://content-api.wildberries.ru"
     SUPPLY_URL = "https://supplies-api.wildberries.ru"
     ANALYTICS_URL = "https://seller-analytics-api.wildberries.ru"
+    COMMON_URL = "https://common-api.wildberries.ru"
 
-    def __init__(self, token: str, timeout: float = 30.0) -> None:
+    def __init__(self, token: str, timeout: float = 120.0) -> None:
         self.token = token
         self.timeout = timeout
         self._headers = {

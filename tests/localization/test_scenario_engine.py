@@ -1,26 +1,5 @@
 # tests/localization/test_scenario_engine.py
 import pytest
-from unittest.mock import patch
-
-MOCK_ROWS = [
-    {"min_loc": 80.0, "max_loc": 84.99, "ktr": 0.80, "krp_pct": 0.0},
-    {"min_loc": 60.0, "max_loc": 64.99, "ktr": 1.00, "krp_pct": 0.0},
-    {"min_loc": 55.0, "max_loc": 59.99, "ktr": 1.05, "krp_pct": 2.00},
-    {"min_loc":  0.0, "max_loc":  4.99, "ktr": 2.20, "krp_pct": 2.50},
-]
-
-
-@pytest.fixture(autouse=True)
-def patch_coeff():
-    import shared.coeff_table as ct
-    ct.clear_cache()
-    from unittest.mock import MagicMock
-    mock_sb = MagicMock()
-    mock_sb.table.return_value.select.return_value \
-        .lte.return_value.order.return_value.execute.return_value.data = MOCK_ROWS
-    with patch("shared.coeff_table.get_supabase_client", return_value=mock_sb):
-        yield
-    ct.clear_cache()
 
 
 def test_ktr_to_loc_pct_finds_midpoint():
