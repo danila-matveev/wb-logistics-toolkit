@@ -4,6 +4,7 @@ credentials.json
 *.db-shm
 *.db-wal
 localization/data/cache/
+localization/data/output/
 __pycache__/
 *.pyc
 .pytest_cache/

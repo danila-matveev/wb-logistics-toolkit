@@ -3,6 +3,6 @@
 # Этот файл можно коммитить — секретов нет.
 cabinets:
   - name: ooo
-    sheet_id: "YOUR_SHEET_ID_HERE"
+    sheet_id: ""
   - name: ip
-    sheet_id: "YOUR_SHEET_ID_HERE"
+    sheet_id: ""
