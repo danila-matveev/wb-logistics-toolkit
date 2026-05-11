@@ -22,7 +22,7 @@ from localization.data.cache import load_cache
 from localization.permutation_calculator import generate_movements
 
 
-def main() -> None:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="WB Localization Phase 3: stock permutation recommendations"
     )
@@ -34,14 +34,26 @@ def main() -> None:
         action="store_true",
         help="Force Excel output even if Sheets is configured",
     )
-    args = parser.parse_args()
+    return parser.parse_args(argv)
 
-    cache = load_cache(args.cabinet)
+
+def run_permutations(
+    cabinet_name: str,
+    safety_days: int = 14,
+    no_sheets: bool = False,
+    output_dir: str = "localization/data/output",
+) -> str | None:
+    """Run Phase 3 permutation recommendations.
+
+    Returns:
+        Path to Excel file if Excel-fallback was chosen, else None (Sheets path).
+    """
+    cache = load_cache(cabinet_name)
     if cache is None:
-        print(f"ERROR: No cache for '{args.cabinet}'. Run run_analysis.py first.")
+        print(f"ERROR: No cache for '{cabinet_name}'. Run run_analysis.py first.")
         sys.exit(1)
 
-    cabinet = get_cabinet(args.cabinet)
+    cabinet = get_cabinet(cabinet_name)
     client = WBClient(token=cabinet.wb_token)
     warehouse_statuses = load_warehouse_statuses()
 
@@ -49,7 +61,7 @@ def main() -> None:
     period_days = cache["period_days"]
     articles = il_irp["articles"]
 
-    print(f"[Phase 3] Cabinet: {args.cabinet} | Safety: {args.safety_days}d | "
+    print(f"[Phase 3] Cabinet: {cabinet_name} | Safety: {safety_days}d | "
           f"Articles: {len(articles)}")
 
     print("  Fetching warehouse remains...")
@@ -62,7 +74,7 @@ def main() -> None:
         warehouse_remains=warehouse_remains,
         warehouse_statuses=warehouse_statuses,
         period_days=period_days,
-        safety_days=args.safety_days,
+        safety_days=safety_days,
     )
 
     print(f"  Movements: {len(result['movements'])} | Supplies: {len(result['supplies'])}")
@@ -73,21 +85,32 @@ def main() -> None:
     from localization.output.writer import SheetsWriter, make_writer
     from localization.output.permutations_writer import write_permutations
 
-    excel_path = f"localization/data/output/Локализация Перестановки {args.cabinet}.xlsx"
+    excel_path = f"{output_dir}/Локализация Перестановки {cabinet_name}.xlsx"
     try:
         writer = make_writer(
             sheet_id=cabinet.sheet_id,
             excel_path=excel_path,
-            force_excel=args.no_sheets,
+            force_excel=no_sheets,
         )
         write_permutations(writer, result)
         out = writer.finalize()
         if isinstance(writer, SheetsWriter):
             print(f"  Sheets updated: {cabinet.sheet_id}")
-        else:
-            print(f"  Excel saved: {out}")
+            return None
+        print(f"  Excel saved: {out}")
+        return out
     except Exception as exc:
         print(f"  Output failed (non-fatal): {exc}")
+        return None
+
+
+def main() -> None:
+    args = _parse_args()
+    run_permutations(
+        cabinet_name=args.cabinet,
+        safety_days=args.safety_days,
+        no_sheets=args.no_sheets,
+    )
 
 
 if __name__ == "__main__":
