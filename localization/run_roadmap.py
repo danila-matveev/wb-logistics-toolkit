@@ -23,7 +23,7 @@ from localization.calculators.relocation_forecaster import simulate_roadmap
 from localization.permutation_calculator import generate_movements, _aggregate_stocks_by_fd
 
 
-def main() -> None:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="WB Localization Phase 2: 13-week roadmap")
     parser.add_argument("cabinet", help="Cabinet name from cabinets.yaml")
     parser.add_argument("--target", type=float, default=85.0,
@@ -35,14 +35,27 @@ def main() -> None:
         action="store_true",
         help="Force Excel output even if Sheets is configured",
     )
-    args = parser.parse_args()
+    return parser.parse_args(argv)
 
-    cache = load_cache(args.cabinet)
+
+def run_roadmap(
+    cabinet_name: str,
+    target: float = 85.0,
+    limit: float = 0.3,
+    no_sheets: bool = False,
+    output_dir: str = "localization/data/output",
+) -> str | None:
+    """Run Phase 2 roadmap simulation.
+
+    Returns:
+        Path to Excel file if Excel-fallback was chosen, else None (Sheets path).
+    """
+    cache = load_cache(cabinet_name)
     if cache is None:
-        print(f"ERROR: No cache for '{args.cabinet}'. Run run_analysis.py first.")
+        print(f"ERROR: No cache for '{cabinet_name}'. Run run_analysis.py first.")
         sys.exit(1)
 
-    cabinet = get_cabinet(args.cabinet)
+    cabinet = get_cabinet(cabinet_name)
     client = WBClient(token=cabinet.wb_token)
     warehouse_statuses = load_warehouse_statuses()
 
@@ -57,7 +70,7 @@ def main() -> None:
     period_days = cache["period_days"]
     articles = il_irp["articles"]
 
-    print(f"[Phase 2] Cabinet: {args.cabinet} | Target: {args.target}% | "
+    print(f"[Phase 2] Cabinet: {cabinet_name} | Target: {target}% | "
           f"Period: {period_days}d | Articles: {len(articles)}")
 
     print("  Fetching warehouse remains for movement planning...")
@@ -84,8 +97,8 @@ def main() -> None:
         logistics_costs=logistics_costs,
         weekly_orders_history=[],
         redistribution_limits=redistribution_limits,
-        realistic_limit_pct=args.limit,
-        target_localization=args.target,
+        realistic_limit_pct=limit,
+        target_localization=target,
         period_days=period_days,
     )
 
@@ -95,21 +108,33 @@ def main() -> None:
     from localization.output.writer import SheetsWriter, make_writer
     from localization.output.roadmap_writer import write_roadmap
 
-    excel_path = f"localization/data/output/Локализация Roadmap {args.cabinet}.xlsx"
+    excel_path = f"{output_dir}/Локализация Roadmap {cabinet_name}.xlsx"
     try:
         writer = make_writer(
             sheet_id=cabinet.sheet_id,
             excel_path=excel_path,
-            force_excel=args.no_sheets,
+            force_excel=no_sheets,
         )
         write_roadmap(writer, roadmap_result)
         out = writer.finalize()
         if isinstance(writer, SheetsWriter):
             print(f"  Sheets updated: {cabinet.sheet_id}")
-        else:
-            print(f"  Excel saved: {out}")
+            return None
+        print(f"  Excel saved: {out}")
+        return out
     except Exception as exc:
         print(f"  Output failed (non-fatal): {exc}")
+        return None
+
+
+def main() -> None:
+    args = _parse_args()
+    run_roadmap(
+        cabinet_name=args.cabinet,
+        target=args.target,
+        limit=args.limit,
+        no_sheets=args.no_sheets,
+    )
 
 
 if __name__ == "__main__":
